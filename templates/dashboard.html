@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h3 class="mb-0">Dashboard</h3>
+  <div class="d-flex align-items-center gap-3">
+    <span class="badge bg-{{ 'success' if active_tier != 'none' else 'secondary' }} p-2">
+      <i class="bi bi-plug me-1"></i>
+      Active tier: {{ active_tier if active_tier != 'none' else 'not connected' }}
+    </span>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
+      <i class="bi bi-upload me-1"></i>Upload CSV
+    </button>
+  </div>
+</div>
+
+<!-- Stat cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card border-0 shadow-sm stat-card h-100">
+      <div class="stat-number text-success">{{ match_rate }}%</div>
+      <div class="stat-label">Match Rate</div>
+      {% if batch %}<div class="small text-muted mt-1">{{ batch.csv_filename }}</div>{% endif %}
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card border-0 shadow-sm stat-card h-100">
+      <div class="stat-number text-warning">{{ pending_count }}</div>
+      <div class="stat-label">Pending Queue</div>
+      <div class="small mt-1">
+        <a href="{{ url_for('queue.pending') }}" class="text-decoration-none">View all →</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card border-0 shadow-sm stat-card h-100">
+      <div class="stat-number text-info">{{ review_count }}</div>
+      <div class="stat-label">Awaiting Review</div>
+      <div class="small mt-1">
+        <a href="{{ url_for('queue.review') }}" class="text-decoration-none">Review →</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card border-0 shadow-sm stat-card h-100">
+      <div class="stat-number text-secondary">{{ manual_count }}</div>
+      <div class="stat-label">Manual Items</div>
+      <div class="small mt-1">
+        <a href="{{ url_for('queue.manual') }}" class="text-decoration-none">View →</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+
+  <!-- Pending queue preview -->
+  <div class="col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <strong>Pending Queue (top 10)</strong>
+        <a href="{{ url_for('queue.pending') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+      </div>
+      <div class="card-body p-0">
+        {% if pending_items %}
+        <table class="table table-hover table-queue mb-0">
+          <thead>
+            <tr>
+              <th class="ps-3">Payor</th>
+              <th>Amount</th>
+              <th>Date</th>
+              <th>Waiting</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in pending_items %}
+            <tr>
+              <td class="fw-semibold ps-3">{{ item.payor_name }}</td>
+              <td>${{ "%.2f"|format(item.amount) }}</td>
+              <td>{{ item.deposit_date or "—" }}</td>
+              <td>
+                {% set age = item.age_days or 0 %}
+                <span class="badge {% if age < 3 %}age-green{% elif age < 8 %}age-yellow{% else %}age-red{% endif %}">
+                  {{ age }}d
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="text-center py-4 text-muted">
+          <i class="bi bi-check-circle text-success me-2"></i>All caught up!
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent runs + extraction log -->
+  <div class="col-lg-4">
+    <div class="card shadow-sm mb-3">
+      <div class="card-header"><strong>Recent Batch Runs</strong></div>
+      <div class="list-group list-group-flush">
+        {% for b in recent_batches %}
+        <div class="list-group-item py-2">
+          <div class="d-flex justify-content-between">
+            <span class="small fw-semibold">{{ b.run_date }}</span>
+            <span class="badge {% if b.status=='complete' %}bg-success{% elif b.status=='error' %}bg-danger{% else %}bg-secondary{% endif %}">
+              {{ b.status }}
+            </span>
+          </div>
+          <div class="small text-muted">
+            {{ b.matched }}/{{ b.total_deposits }} matched
+            {% if b.review %}&nbsp;· {{ b.review }} review{% endif %}
+          </div>
+        </div>
+        {% else %}
+        <div class="list-group-item text-muted small py-3 text-center">No runs yet</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card shadow-sm">
+      <div class="card-header"><strong>Extraction Log (recent)</strong></div>
+      <div class="list-group list-group-flush">
+        {% for log in recent_log %}
+        <div class="list-group-item py-2">
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="small text-truncate me-2" style="max-width:130px" title="{{ log.source_file }}">{{ log.source_file }}</span>
+            <span class="badge {{ 'bg-success' if log.extraction_method=='text_layer' else ('bg-warning text-dark' if log.extraction_method=='ocr' else 'bg-secondary') }}">
+              {{ log.extraction_method }}
+            </span>
+          </div>
+        </div>
+        {% else %}
+        <div class="list-group-item text-muted small py-3 text-center">No documents processed yet</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- CSV Upload Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content" x-data="csvUpload()">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-upload me-2"></i>Upload Deposit CSV</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('processing.upload_csv') }}" enctype="multipart/form-data">
+        <div class="modal-body">
+          <div class="drop-zone mb-3" id="dropZone"
+               @dragover.prevent="dragover=true" @dragleave="dragover=false"
+               @drop.prevent="handleDrop($event)" :class="{dragover: dragover}">
+            <i class="bi bi-file-earmark-spreadsheet text-primary" style="font-size:2.5rem"></i>
+            <div class="mt-2 fw-semibold">Drag &amp; drop CSV here</div>
+            <div class="text-muted small mt-1">or click to browse</div>
+            <input type="file" name="csv_file" id="csvFile" accept=".csv"
+                   class="d-none" @change="fileSelected($event)">
+          </div>
+          <div x-show="filename" class="alert alert-info d-flex align-items-center gap-2">
+            <i class="bi bi-file-earmark-check"></i>
+            <span x-text="filename"></span>
+          </div>
+          <div class="text-muted small">
+            Minimum required columns: Payor Name, Amount, Date.<br>
+            Column names are detected automatically using common synonyms.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" :disabled="!filename">
+            <i class="bi bi-upload me-1"></i>Upload &amp; Preview
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function csvUpload() {
+  return {
+    filename: '',
+    dragover: false,
+    fileSelected(e) {
+      const file = e.target.files[0];
+      if (file) { this.filename = file.name; }
+    },
+    handleDrop(e) {
+      this.dragover = false;
+      const file = e.dataTransfer.files[0];
+      if (file && file.name.endsWith('.csv')) {
+        this.filename = file.name;
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        document.getElementById('csvFile').files = dt.files;
+      }
+    }
+  }
+}
+
+// Click on drop zone opens file picker
+document.getElementById('dropZone').addEventListener('click', function() {
+  document.getElementById('csvFile').click();
+});
+</script>
+{% endblock %}

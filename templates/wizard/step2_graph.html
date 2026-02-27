@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block title %}Setup Wizard — Microsoft Graph API{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+<div class="col-lg-9">
+
+  <!-- Progress -->
+  <div class="mb-4">
+    <div class="d-flex justify-content-between small text-muted mb-1">
+      <span>Step 2 of {{ total }}</span>
+      <span>Microsoft Graph API Setup</span>
+    </div>
+    <div class="progress" style="height:8px">
+      <div class="progress-bar" style="width:{{ (step/total*100)|round }}%"></div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm" x-data="graphWizard()">
+    <div class="card-body p-4 p-lg-5">
+
+      <div class="d-flex align-items-center gap-3 mb-4">
+        <i class="bi bi-microsoft text-primary" style="font-size:2.5rem"></i>
+        <div>
+          <h3 class="mb-0 fw-bold">Microsoft Graph API</h3>
+          <p class="text-muted mb-0">Primary email access via OAuth2 — free, secure, and automatic.</p>
+        </div>
+      </div>
+
+      <!-- Step-by-step Azure instructions -->
+      <div class="accordion mb-4" id="azureInstructions">
+
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#az1">
+              <span class="badge bg-primary me-2">1</span> Create a free Azure App Registration
+            </button>
+          </h2>
+          <div id="az1" class="accordion-collapse collapse show" data-bs-parent="#azureInstructions">
+            <div class="accordion-body">
+              <ol>
+                <li>Go to <strong>portal.azure.com</strong> and sign in with your Microsoft 365 work account.</li>
+                <li>In the search bar at the top, type <kbd>App registrations</kbd> and click it.</li>
+                <li>Click <strong>+ New registration</strong>.</li>
+                <li>Enter any name (e.g. <em>Remittance Tool</em>).</li>
+                <li>Under <em>Supported account types</em>, select <strong>"Accounts in this organizational directory only"</strong>.</li>
+                <li>Under <em>Redirect URI</em>, select <strong>Public client/native</strong> and enter: <code>http://localhost</code></li>
+                <li>Click <strong>Register</strong>.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#az2">
+              <span class="badge bg-primary me-2">2</span> Copy your Client ID and Tenant ID
+            </button>
+          </h2>
+          <div id="az2" class="accordion-collapse collapse" data-bs-parent="#azureInstructions">
+            <div class="accordion-body">
+              <p>After registration, you'll see the <strong>Overview</strong> page. Copy two values:</p>
+              <ul>
+                <li><strong>Application (client) ID</strong> — looks like <code>xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx</code></li>
+                <li><strong>Directory (tenant) ID</strong> — same UUID format</li>
+              </ul>
+              <p>Paste them into the fields below.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#az3">
+              <span class="badge bg-primary me-2">3</span> Grant Mail.Read permission
+            </button>
+          </h2>
+          <div id="az3" class="accordion-collapse collapse" data-bs-parent="#azureInstructions">
+            <div class="accordion-body">
+              <ol>
+                <li>In your App Registration, click <strong>API permissions</strong> in the left menu.</li>
+                <li>Click <strong>+ Add a permission</strong>.</li>
+                <li>Choose <strong>Microsoft Graph</strong> → <strong>Delegated permissions</strong>.</li>
+                <li>Search for <code>Mail.Read</code>, check it, and click <strong>Add permissions</strong>.</li>
+                <li>Click <strong>Grant admin consent</strong> (if you are an admin) — or ask your IT admin to do this.</li>
+              </ol>
+              <p class="text-muted small">If you can't grant admin consent, you can still authenticate — you'll just be prompted to consent yourself during sign-in.</p>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /accordion -->
+
+      <!-- Credential fields -->
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Client ID <span class="text-danger">*</span></label>
+          <input type="text" class="form-control font-monospace" x-model="clientId"
+                 placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                 value="{{ graph_client_id }}">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Tenant ID <span class="text-danger">*</span></label>
+          <input type="text" class="form-control font-monospace" x-model="tenantId"
+                 placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                 value="{{ graph_tenant_id }}">
+        </div>
+      </div>
+
+      <!-- Test connection button -->
+      <div class="mb-4">
+        <button type="button" class="btn btn-outline-primary" @click="testConnection()" :disabled="testing">
+          <span x-show="!testing"><i class="bi bi-plug me-1"></i>Test Connection &amp; Authenticate</span>
+          <span x-show="testing"><span class="spinner-border spinner-border-sm me-1"></span>Opening browser for sign-in...</span>
+        </button>
+        <div x-show="result !== null" class="mt-2">
+          <div x-show="result.ok" class="alert alert-success d-flex align-items-center gap-2 mb-0">
+            <i class="bi bi-check-circle-fill"></i>
+            <span x-text="result.message"></span>
+          </div>
+          <div x-show="!result.ok" class="alert alert-danger mb-0">
+            <div class="fw-semibold"><i class="bi bi-x-circle-fill me-1"></i>Connection failed</div>
+            <div x-text="result.message"></div>
+            <hr>
+            <small><strong>Troubleshooting:</strong> Verify the Client ID and Tenant ID are correct. Ensure <code>Mail.Read</code> permission is granted. Check that the redirect URI <code>http://localhost</code> is registered as a Public client URI in Azure.</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Save and advance -->
+      <form method="POST" action="{{ url_for('wizard.step_post', n=2) }}">
+        <input type="hidden" name="client_id" :value="clientId">
+        <input type="hidden" name="tenant_id" :value="tenantId">
+        <div class="d-flex justify-content-between align-items-center">
+          <a href="{{ url_for('wizard.step', n=1) }}" class="btn btn-link text-muted">
+            <i class="bi bi-arrow-left me-1"></i>Back
+          </a>
+          <div class="d-flex gap-2">
+            <button type="submit" name="action" value="skip" class="btn btn-outline-secondary">
+              Skip for now
+            </button>
+            <button type="submit" name="action" value="next" class="btn btn-primary">
+              Save &amp; Continue <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+          </div>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+</div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function graphWizard() {
+  return {
+    clientId: '{{ graph_client_id }}',
+    tenantId: '{{ graph_tenant_id }}',
+    testing: false,
+    result: null,
+    async testConnection() {
+      if (!this.clientId || !this.tenantId) {
+        this.result = {ok: false, message: 'Please enter both Client ID and Tenant ID first.'};
+        return;
+      }
+      this.testing = true;
+      this.result = null;
+      try {
+        const resp = await fetch('/wizard/test-graph', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({client_id: this.clientId, tenant_id: this.tenantId})
+        });
+        this.result = await resp.json();
+      } catch(e) {
+        this.result = {ok: false, message: 'Request failed: ' + e.message};
+      }
+      this.testing = false;
+    }
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}Setup Wizard — IMAP Fallback{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+<div class="col-lg-8">
+
+  <div class="mb-4">
+    <div class="d-flex justify-content-between small text-muted mb-1">
+      <span>Step 3 of {{ total }}</span><span>IMAP Fallback Setup</span>
+    </div>
+    <div class="progress" style="height:8px">
+      <div class="progress-bar" style="width:{{ (step/total*100)|round }}%"></div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm" x-data="imapWizard()">
+    <div class="card-body p-4 p-lg-5">
+
+      <div class="d-flex align-items-center gap-3 mb-3">
+        <i class="bi bi-envelope-at text-primary" style="font-size:2.5rem"></i>
+        <div>
+          <h3 class="mb-0 fw-bold">IMAP Fallback</h3>
+          <p class="text-muted mb-0">Backup email access if the Graph API is unavailable.</p>
+        </div>
+      </div>
+
+      <div class="alert alert-light border mb-4">
+        <strong>What is IMAP?</strong> IMAP is a standard email protocol that lets applications read your mailbox directly. It is used here as a backup: if the Graph API fails for any reason, the tool will silently switch to IMAP and continue without interruption. The IMAP server for Microsoft 365 is <code>outlook.office365.com:993</code> (SSL).
+      </div>
+
+      <h6 class="fw-semibold">Using an App Password (recommended)</h6>
+      <p class="small text-muted">If your organisation has disabled basic authentication, you may need a Microsoft 365 <strong>App Password</strong>:</p>
+      <ol class="small">
+        <li>Sign in at <strong>mysignins.microsoft.com/security-info</strong></li>
+        <li>Click <strong>+ Add sign-in method</strong> → <strong>App password</strong></li>
+        <li>Give it a name (e.g. "Remittance Tool") and copy the generated password</li>
+        <li>Paste it in the password field below — it replaces your regular password</li>
+      </ol>
+      <p class="small text-muted">App passwords are available only if your admin hasn't blocked them entirely. If neither regular passwords nor app passwords work, IMAP may be disabled at the tenant level — in that case, use the Graph API (Step 2) or Folder Watch (Step 4).</p>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Microsoft 365 Email Address</label>
+          <input type="email" class="form-control" x-model="email"
+                 placeholder="you@yourcompany.com" value="{{ imap_email }}">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Password or App Password</label>
+          <input type="password" class="form-control" x-model="password"
+                 placeholder="Leave blank to keep existing">
+        </div>
+      </div>
+
+      <!-- Test button -->
+      <div class="mb-4">
+        <button type="button" class="btn btn-outline-primary" @click="testImap()" :disabled="testing">
+          <span x-show="!testing"><i class="bi bi-plug me-1"></i>Test IMAP Connection</span>
+          <span x-show="testing"><span class="spinner-border spinner-border-sm me-1"></span>Testing...</span>
+        </button>
+        <div x-show="result !== null" class="mt-2">
+          <div x-show="result.ok" class="alert alert-success d-flex align-items-center gap-2 mb-0">
+            <i class="bi bi-check-circle-fill"></i>
+            <span x-text="result.message"></span>
+          </div>
+          <div x-show="!result.ok" class="alert alert-danger mb-0">
+            <div class="fw-semibold"><i class="bi bi-x-circle-fill me-1"></i>Connection failed</div>
+            <div x-text="result.message"></div>
+            <hr>
+            <div x-show="result.error_type === 'refused'">
+              <strong>IMAP appears to be disabled at the tenant level.</strong> Contact your IT administrator to enable IMAP access, or use an App Password. Alternatively, use Graph API (Step 2) or Folder Watch (Step 4) as your primary method.
+            </div>
+            <div x-show="result.error_type === 'auth'">
+              <strong>Authentication failed.</strong> Check your email address and password. If your organisation uses MFA or modern authentication, you may need an App Password instead of your regular password.
+            </div>
+            <div x-show="result.error_type === 'timeout'">
+              <strong>Connection timed out.</strong> Check your internet connection and firewall settings. Port 993 (IMAP SSL) may be blocked on your network.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <form method="POST" action="{{ url_for('wizard.step_post', n=3) }}">
+        <input type="hidden" name="imap_email" :value="email">
+        <input type="hidden" name="imap_password" :value="password">
+        <div class="d-flex justify-content-between align-items-center">
+          <a href="{{ url_for('wizard.step', n=2) }}" class="btn btn-link text-muted">
+            <i class="bi bi-arrow-left me-1"></i>Back
+          </a>
+          <div class="d-flex gap-2">
+            <button type="submit" name="action" value="skip" class="btn btn-outline-secondary">Skip for now</button>
+            <button type="submit" name="action" value="next" class="btn btn-primary">
+              Save &amp; Continue <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+          </div>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+</div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function imapWizard() {
+  return {
+    email: '{{ imap_email }}',
+    password: '',
+    testing: false,
+    result: null,
+    async testImap() {
+      if (!this.email || !this.password) {
+        this.result = {ok: false, error_type: null, message: 'Please enter email and password first.'};
+        return;
+      }
+      this.testing = true;
+      this.result = null;
+      try {
+        const resp = await fetch('/wizard/test-imap', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({email: this.email, password: this.password})
+        });
+        this.result = await resp.json();
+      } catch(e) {
+        this.result = {ok: false, error_type: null, message: 'Request failed: ' + e.message};
+      }
+      this.testing = false;
+    }
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Setup Wizard — First Payor Profile{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+<div class="col-lg-9">
+
+  <div class="mb-4">
+    <div class="d-flex justify-content-between small text-muted mb-1">
+      <span>Step 6 of {{ total }}</span><span>First Payor Profile</span>
+    </div>
+    <div class="progress" style="height:8px">
+      <div class="progress-bar" style="width:{{ (step/total*100)|round }}%"></div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body p-4 p-lg-5">
+
+      <div class="d-flex align-items-center gap-3 mb-3">
+        <i class="bi bi-person-badge text-primary" style="font-size:2.5rem"></i>
+        <div>
+          <h3 class="mb-0 fw-bold">First Payor Profile</h3>
+          <p class="text-muted mb-0">Profiles tell the tool how to identify remittances from each payor.</p>
+        </div>
+      </div>
+
+      <form method="POST" action="{{ url_for('wizard.step_post', n=6) }}">
+        <div class="row g-3">
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Payor Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" name="name" placeholder="Acme Corp" required>
+            <div class="form-text">Must match the payor name as it appears in your deposit CSV.</div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Sender Email Address</label>
+            <input type="email" class="form-control" name="sender_email" placeholder="remittance@acme.com">
+            <div class="form-text">The "from" address for this payor's remittance emails.</div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Sender Domain</label>
+            <input type="text" class="form-control" name="sender_domain" placeholder="acme.com">
+            <div class="form-text">Used for domain-level matching if the exact address varies.</div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Subject Line Keywords</label>
+            <input type="text" class="form-control" name="subject_keywords" placeholder="remittance, payment advice">
+            <div class="form-text">Comma-separated. Emails containing any keyword are prioritised.</div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">What to Save</label>
+            <select class="form-select" name="save_mode">
+              <option value="both">Email body + attachments</option>
+              <option value="attachment">Attachments only</option>
+              <option value="body">Email body only</option>
+            </select>
+            <div class="form-text">What portion of the email to convert to PDF for your records.</div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Email Access Tier Override</label>
+            <select class="form-select" name="email_tier_override">
+              <option value="global">Use global settings (default)</option>
+              <option value="graph">Graph API only</option>
+              <option value="imap">IMAP only</option>
+              <option value="folder">Folder Watch only</option>
+            </select>
+            <div class="form-text">Override the global tier order for this payor specifically.</div>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label fw-semibold">Custom Reference Number Labels</label>
+            <input type="text" class="form-control" name="custom_ref_labels" placeholder="Payment Voucher, Remit ID">
+            <div class="form-text">Comma-separated labels unique to this payor (supplements the standard synonym list).</div>
+          </div>
+
+          <div class="col-12">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="manual_only" value="1" id="manualOnly">
+              <label class="form-check-label fw-semibold" for="manualOnly">Manual Only — exclude from automation</label>
+            </div>
+            <div class="form-text ms-4">Check this to show the payor on the daily summary but never process their emails automatically.</div>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label fw-semibold">Notes</label>
+            <textarea class="form-control" name="notes" rows="2" placeholder="Any quirks or special handling instructions..."></textarea>
+          </div>
+
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-4">
+          <a href="{{ url_for('wizard.step', n=5) }}" class="btn btn-link text-muted">
+            <i class="bi bi-arrow-left me-1"></i>Back
+          </a>
+          <div class="d-flex gap-2">
+            <button type="submit" name="action" value="skip" class="btn btn-outline-secondary">Skip for now</button>
+            <button type="submit" name="action" value="add_another" class="btn btn-outline-primary">
+              Save &amp; Add Another
+            </button>
+            <button type="submit" name="action" value="next" class="btn btn-primary">
+              Save &amp; Continue <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+          </div>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+</div>
+</div>
+{% endblock %}

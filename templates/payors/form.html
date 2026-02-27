@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}{{ action }} Payor{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+<div class="col-lg-8">
+
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <a href="{{ url_for('payors.list_payors') }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <h3 class="mb-0">{{ action }} Payor Profile</h3>
+  </div>
+
+  <form method="POST">
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+
+        <div class="row g-3">
+
+          <div class="col-12">
+            <label class="form-label fw-semibold">Payor Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" name="name"
+                   value="{{ payor.name if payor else '' }}" required
+                   placeholder="Exactly as it appears in your deposit CSV">
+            <div class="form-text">Must match the payor name column in your CSV exactly (case-insensitive fuzzy matching is also applied).</div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Sender Email Address</label>
+            <input type="email" class="form-control" name="sender_email"
+                   value="{{ payor.sender_email if payor else '' }}"
+                   placeholder="remittance@payor.com">
+            <div class="form-text">Full "from" address. Leave blank to match by domain only.</div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Sender Domain</label>
+            <input type="text" class="form-control" name="sender_domain"
+                   value="{{ payor.sender_domain if payor else '' }}"
+                   placeholder="payor.com">
+            <div class="form-text">Domain-level matching when exact address isn't known.</div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Subject Keywords</label>
+            <input type="text" class="form-control" name="subject_keywords"
+                   value="{{ payor.subject_keywords if payor else '' }}"
+                   placeholder="remittance, payment advice, EFT">
+            <div class="form-text">Comma-separated. Emails with matching subjects are prioritised.</div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">What to Save as PDF</label>
+            <select class="form-select" name="save_mode">
+              <option value="both"       {% if payor and payor.save_mode=='both'       %}selected{% endif %}>Email body + attachments</option>
+              <option value="attachment" {% if payor and payor.save_mode=='attachment' %}selected{% endif %}>Attachments only</option>
+              <option value="body"       {% if payor and payor.save_mode=='body'       %}selected{% endif %}>Email body only</option>
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Email Tier Override</label>
+            <select class="form-select" name="email_tier_override">
+              <option value="global" {% if not payor or payor.email_tier_override=='global' %}selected{% endif %}>Use global settings</option>
+              <option value="graph"  {% if payor and payor.email_tier_override=='graph'  %}selected{% endif %}>Graph API only</option>
+              <option value="imap"   {% if payor and payor.email_tier_override=='imap'   %}selected{% endif %}>IMAP only</option>
+              <option value="folder" {% if payor and payor.email_tier_override=='folder' %}selected{% endif %}>Folder Watch only</option>
+            </select>
+            <div class="form-text">Override the global tier preference for this payor.</div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Custom Reference Labels</label>
+            <input type="text" class="form-control" name="custom_ref_labels"
+                   value="{{ payor.custom_ref_labels if payor else '' }}"
+                   placeholder="Payment Voucher, Remit ID">
+            <div class="form-text">Comma-separated. Supplements the standard 30+ synonym list.</div>
+          </div>
+
+          <div class="col-12">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="manual_only" value="1"
+                     id="manualOnly" {% if payor and payor.manual_only %}checked{% endif %}>
+              <label class="form-check-label fw-semibold" for="manualOnly">
+                Manual Only — exclude from automated email scanning
+              </label>
+            </div>
+            <div class="form-text ms-4">The payor will still appear in the daily summary but automation won't touch their emails.</div>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label fw-semibold">Notes</label>
+            <textarea class="form-control" name="notes" rows="3"
+                      placeholder="Quirks, special handling, remittance format details...">{{ payor.notes if payor else '' }}</textarea>
+          </div>
+
+        </div>
+      </div>
+      <div class="card-footer bg-transparent d-flex justify-content-between">
+        <a href="{{ url_for('payors.list_payors') }}" class="btn btn-outline-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary px-4">
+          <i class="bi bi-check-lg me-1"></i>{{ action }}
+        </button>
+      </div>
+    </div>
+  </form>
+
+</div>
+</div>
+{% endblock %}

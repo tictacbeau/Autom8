@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<h3 class="mb-4">Settings</h3>
+
+<div class="row g-4">
+
+  <!-- General -->
+  <div class="col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold">General</div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('settings.save_settings') }}">
+          <div class="mb-3">
+            <label class="form-label">Email Lookback Window (days)</label>
+            <input type="number" class="form-control" name="lookback_days"
+                   value="{{ lookback_days }}" min="1" max="30" style="max-width:100px">
+            <div class="form-text">How many days back and forward from the deposit date to search for matching emails. Default: 7.</div>
+          </div>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Email Tiers Status -->
+  <div class="col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold">Email Access Tiers</div>
+      <div class="list-group list-group-flush">
+        <div class="list-group-item d-flex justify-content-between align-items-center">
+          <div>
+            <i class="bi bi-microsoft me-2 text-primary"></i>
+            <strong>Graph API</strong>
+            <div class="small text-muted">{{ graph_client_id or "Not configured" }}</div>
+          </div>
+          <span class="badge {{ 'bg-success' if graph_client_id else 'bg-secondary' }}">
+            {{ "Active" if graph_client_id else "Not configured" }}
+          </span>
+        </div>
+        <div class="list-group-item d-flex justify-content-between align-items-center">
+          <div>
+            <i class="bi bi-envelope-at me-2 text-primary"></i>
+            <strong>IMAP</strong>
+            <div class="small text-muted">{{ imap_email or "Not configured" }}</div>
+          </div>
+          <span class="badge {{ 'bg-success' if imap_configured else 'bg-secondary' }}">
+            {{ "Active" if imap_configured else "Not configured" }}
+          </span>
+        </div>
+        <div class="list-group-item d-flex justify-content-between align-items-center">
+          <div>
+            <i class="bi bi-folder-check me-2 text-primary"></i>
+            <strong>Folder Watch</strong>
+          </div>
+          <span class="badge bg-success">Always Active</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Access Priority -->
+  <div class="col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold">Current Access Priority</div>
+      <div class="card-body">
+        <ol class="mb-0">
+          {% for t in tier_order %}
+          <li class="mb-1">
+            <span class="badge bg-primary">{{ t | title }}</span>
+          </li>
+          {% endfor %}
+        </ol>
+        <div class="mt-3">
+          <a href="{{ url_for('wizard.step', n=5) }}" class="btn btn-sm btn-outline-primary">
+            Change Priority
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Re-run wizard -->
+  <div class="col-lg-6">
+    <div class="card shadow-sm border-warning">
+      <div class="card-header fw-semibold text-warning">
+        <i class="bi bi-arrow-repeat me-2"></i>Re-run Setup Wizard
+      </div>
+      <div class="card-body">
+        <p class="text-muted small">Restart the setup wizard to reconfigure email credentials, add a new tier, or update payor profiles. Your existing data will not be affected.</p>
+        <form method="POST" action="{{ url_for('settings.restart_wizard') }}"
+              onsubmit="return confirm('Restart the setup wizard? You can re-configure any step individually.')">
+          <button type="submit" class="btn btn-warning">
+            <i class="bi bi-arrow-repeat me-1"></i>Re-run Wizard
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

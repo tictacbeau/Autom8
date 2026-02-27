@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Setup Wizard — Folder Watch{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+<div class="col-lg-8">
+
+  <div class="mb-4">
+    <div class="d-flex justify-content-between small text-muted mb-1">
+      <span>Step 4 of {{ total }}</span><span>Local Folder Watch</span>
+    </div>
+    <div class="progress" style="height:8px">
+      <div class="progress-bar" style="width:{{ (step/total*100)|round }}%"></div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body p-4 p-lg-5">
+
+      <div class="d-flex align-items-center gap-3 mb-3">
+        <i class="bi bi-folder-check text-primary" style="font-size:2.5rem"></i>
+        <div>
+          <h3 class="mb-0 fw-bold">Local Folder Watch</h3>
+          <p class="text-muted mb-0">Always available — no credentials, no network required.</p>
+        </div>
+      </div>
+
+      <div class="alert alert-success d-flex align-items-start gap-2">
+        <i class="bi bi-check-circle-fill flex-shrink-0 mt-1"></i>
+        <div>The folder watch is <strong>always active</strong>. No credentials or configuration are required for this tier.</div>
+      </div>
+
+      <h6 class="fw-semibold">How it works</h6>
+      <p>The tool continuously monitors a designated watch folder. Any file you drop into it is automatically processed against your pending deposit queue using the same matching logic as the email tiers.</p>
+
+      <h6 class="fw-semibold mt-3">Watch folder location</h6>
+      <div class="bg-light border rounded p-3 font-monospace mb-3 d-flex align-items-center gap-2">
+        <i class="bi bi-folder2-open text-warning"></i>
+        <span>{{ watch_dir }}</span>
+      </div>
+      <p class="text-muted small">This folder is inside the project directory. Nothing is ever written outside the project folder.</p>
+
+      <h6 class="fw-semibold mt-3">Supported file types</h6>
+      <div class="row g-2 mb-3">
+        <div class="col-auto"><span class="badge bg-primary">.eml</span></div>
+        <div class="col-auto"><span class="badge bg-primary">.msg</span></div>
+        <div class="col-auto"><span class="badge bg-primary">.pdf</span></div>
+        <div class="col-auto"><span class="badge bg-primary">.docx</span></div>
+        <div class="col-auto"><span class="badge bg-secondary">.png</span></div>
+        <div class="col-auto"><span class="badge bg-secondary">.jpg</span></div>
+        <div class="col-auto"><span class="badge bg-secondary">.jpeg</span></div>
+        <div class="col-auto"><span class="badge bg-secondary">.tiff</span></div>
+        <div class="col-auto"><span class="badge bg-secondary">.bmp</span></div>
+      </div>
+
+      <h6 class="fw-semibold mt-3">How to save emails from Outlook</h6>
+      <ol class="small">
+        <li>Open the remittance email in Outlook.</li>
+        <li>Go to <strong>File → Save As</strong>.</li>
+        <li>Choose <strong>Outlook Message Format (*.msg)</strong> or <strong>EML</strong> and navigate to the watch folder.</li>
+        <li>The file is picked up automatically within a few seconds.</li>
+      </ol>
+      <p class="small text-muted">You can also drag PDF or image remittances directly into the watch folder — they'll be processed the same way.</p>
+
+      <h6 class="fw-semibold mt-3">When to use Folder Watch</h6>
+      <ul class="small text-muted">
+        <li>IMAP and Graph API are both unavailable due to IT policy</li>
+        <li>A specific payor sends remittances in a format that needs manual review before processing</li>
+        <li>You want to manually curate which emails are processed for a particular payor</li>
+      </ul>
+
+      <form method="POST" action="{{ url_for('wizard.step_post', n=4) }}">
+        <div class="d-flex justify-content-between align-items-center mt-4">
+          <a href="{{ url_for('wizard.step', n=3) }}" class="btn btn-link text-muted">
+            <i class="bi bi-arrow-left me-1"></i>Back
+          </a>
+          <button type="submit" name="action" value="next" class="btn btn-primary">
+            Got it — Continue <i class="bi bi-arrow-right ms-1"></i>
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+</div>
+</div>
+{% endblock %}

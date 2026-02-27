@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Setup Wizard — Welcome{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+<div class="col-lg-8">
+
+  <!-- Progress -->
+  <div class="mb-4">
+    <div class="d-flex justify-content-between small text-muted mb-1">
+      <span>Step 1 of {{ total }}</span>
+      <span>Welcome &amp; Overview</span>
+    </div>
+    <div class="progress" style="height:8px">
+      <div class="progress-bar" style="width:{{ (step/total*100)|round }}%"></div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body p-4 p-lg-5">
+
+      <div class="text-center mb-4">
+        <i class="bi bi-receipt-cutoff text-primary" style="font-size:3rem"></i>
+        <h2 class="mt-2 fw-bold">Welcome to Remittance Reconciliation</h2>
+        <p class="text-muted">Let's get you set up in about 5–10 minutes.</p>
+      </div>
+
+      <h5 class="fw-semibold">What this tool does</h5>
+      <p>Each day you upload a CSV of the previous day's bank deposit report. The tool automatically searches your Microsoft 365 email for remittance documents matching each deposit, saves them as organised PDFs, and keeps a carry-forward queue for anything it couldn't match yet.</p>
+
+      <h5 class="fw-semibold mt-4">What we'll set up now</h5>
+      <ol class="list-group list-group-numbered mb-3">
+        <li class="list-group-item border-0 ps-0"><strong>Step 2 — Microsoft Graph API</strong> &nbsp;<span class="badge bg-success">Recommended</span><br><small class="text-muted">Free Azure App Registration; authenticates once and refreshes automatically.</small></li>
+        <li class="list-group-item border-0 ps-0"><strong>Step 3 — IMAP Fallback</strong><br><small class="text-muted">Backup email access if the API ever fails.</small></li>
+        <li class="list-group-item border-0 ps-0"><strong>Step 4 — Local Folder Watch</strong><br><small class="text-muted">Always-available option — drop exported emails or PDFs into a folder.</small></li>
+        <li class="list-group-item border-0 ps-0"><strong>Step 5 — Access Priority</strong><br><small class="text-muted">Choose which method to try first.</small></li>
+        <li class="list-group-item border-0 ps-0"><strong>Step 6 — First Payor Profile</strong><br><small class="text-muted">Tell the tool about your first payor.</small></li>
+      </ol>
+
+      <div class="alert alert-info d-flex align-items-start gap-2 mt-3">
+        <i class="bi bi-info-circle-fill flex-shrink-0 mt-1"></i>
+        <div>You can <strong>skip any step</strong> you don't want to configure right now and return to it later from <strong>Settings → Re-run Wizard</strong>.</div>
+      </div>
+
+      <form method="POST" action="{{ url_for('wizard.step_post', n=1) }}">
+        <div class="d-flex justify-content-end mt-4">
+          <button type="submit" name="action" value="next" class="btn btn-primary btn-lg px-5">
+            Get Started <i class="bi bi-arrow-right ms-1"></i>
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+</div>
+</div>
+{% endblock %}

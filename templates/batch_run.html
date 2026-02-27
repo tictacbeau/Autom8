@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block title %}Run Batch{% endblock %}
+
+{% block content %}
+<div x-data="batchRun({{ batch.id }})" x-init="init()">
+
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <h3 class="mb-0">Batch Run — {{ batch.csv_filename }}</h3>
+  </div>
+
+  <!-- Pre-run summary -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <div class="small text-muted">Total Deposits</div>
+          <div class="fs-4 fw-bold">{{ deposits|length }}</div>
+        </div>
+        <div class="col-md-4">
+          <div class="small text-muted">Total Value</div>
+          <div class="fs-4 fw-bold">${{ "%.2f"|format(deposits|sum(attribute='amount')) }}</div>
+        </div>
+        <div class="col-md-4">
+          <div class="small text-muted">Date</div>
+          <div class="fs-4 fw-bold">{{ batch.run_date }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Start button / progress -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <div x-show="!started && !done">
+        <button class="btn btn-primary btn-lg" @click="startBatch()">
+          <i class="bi bi-play-fill me-2"></i>Start Matching
+        </button>
+        <p class="text-muted mt-2 mb-0 small">
+          This will scan your configured email tiers for remittances matching each deposit, then save matched PDFs.
+        </p>
+      </div>
+
+      <div x-show="started && !done" class="text-center py-3">
+        <div class="spinner-border text-primary mb-3" role="status"></div>
+        <h5 x-text="statusMsg">Starting...</h5>
+        <div class="progress mt-3" style="height:12px">
+          <div class="progress-bar progress-bar-striped progress-bar-animated"
+               :style="'width:' + progressPct + '%'"></div>
+        </div>
+        <div class="small text-muted mt-2" x-text="progress + ' / ' + total + ' deposits processed'"></div>
+      </div>
+
+      <div x-show="done" class="text-center py-3">
+        <i class="bi bi-check-circle-fill text-success" style="font-size:3rem"></i>
+        <h4 class="mt-2">Batch complete!</h4>
+        <p x-text="statusMsg" class="text-muted"></p>
+        <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary me-2">
+          <i class="bi bi-speedometer2 me-1"></i>Dashboard
+        </a>
+        <a href="{{ url_for('queue.review') }}" class="btn btn-outline-primary">
+          <i class="bi bi-eye me-1"></i>Review Queue
+        </a>
+      </div>
+
+      <div x-show="error" class="alert alert-danger mt-3">
+        <strong>Error:</strong> <span x-text="errorMsg"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Deposit list preview -->
+  <div class="card shadow-sm">
+    <div class="card-header"><strong>Deposits in this batch</strong></div>
+    <div class="table-responsive">
+    <table class="table table-hover table-queue mb-0">
+      <thead>
+        <tr>
+          <th class="ps-3">Payor</th>
+          <th>Amount</th>
+          <th>Date</th>
+          <th>Reference</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for dep in deposits %}
+        <tr>
+          <td class="fw-semibold ps-3">{{ dep.payor_name }}</td>
+          <td>${{ "%.2f"|format(dep.amount) }}</td>
+          <td>{{ dep.deposit_date or "—" }}</td>
+          <td class="font-monospace small">{{ dep.reference_number or "—" }}</td>
+          <td>
+            <span class="badge bg-{{ 'success' if dep.status=='matched' else ('info' if dep.status=='review' else ('secondary' if dep.status=='manual' else 'warning text-dark')) }}">
+              {{ dep.status }}
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function batchRun(batchId) {
+  return {
+    batchId: batchId,
+    jobId: null,
+    started: false,
+    done: false,
+    error: false,
+    errorMsg: '',
+    statusMsg: '',
+    progress: 0,
+    total: 0,
+    pollTimer: null,
+
+    get progressPct() {
+      if (!this.total) return 0;
+      return Math.round(this.progress / this.total * 100);
+    },
+
+    init() {},
+
+    async startBatch() {
+      this.started = true;
+      this.statusMsg = 'Starting...';
+      try {
+        const resp = await fetch('/process/run-batch', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({batch_id: this.batchId})
+        });
+        const data = await resp.json();
+        if (data.error) { this.showError(data.error); return; }
+        this.jobId = data.job_id;
+        this.pollTimer = setInterval(() => this.pollStatus(), 2000);
+      } catch(e) {
+        this.showError(e.message);
+      }
+    },
+
+    async pollStatus() {
+      if (!this.jobId) return;
+      try {
+        const resp = await fetch('/process/status/' + this.jobId);
+        const job = await resp.json();
+        this.statusMsg = job.message || '';
+        this.progress = job.progress || 0;
+        this.total = job.total || 0;
+        if (job.status === 'complete') {
+          clearInterval(this.pollTimer);
+          this.done = true;
+        } else if (job.status === 'error') {
+          clearInterval(this.pollTimer);
+          this.showError(job.message);
+        }
+      } catch(e) {
+        // transient; keep polling
+      }
+    },
+
+    showError(msg) {
+      this.error = true;
+      this.errorMsg = msg;
+      this.started = false;
+    }
+  }
+}
+</script>
+{% endblock %}

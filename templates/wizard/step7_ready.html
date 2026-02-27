@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Setup Wizard — Complete{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+<div class="col-lg-7">
+
+  <div class="mb-4">
+    <div class="d-flex justify-content-between small text-muted mb-1">
+      <span>Step 7 of {{ total }}</span><span>Ready!</span>
+    </div>
+    <div class="progress" style="height:8px">
+      <div class="progress-bar bg-success" style="width:100%"></div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm border-success">
+    <div class="card-body p-4 p-lg-5 text-center">
+
+      <div class="mb-3">
+        <i class="bi bi-check-circle-fill text-success" style="font-size:4rem"></i>
+      </div>
+      <h2 class="fw-bold">You're all set!</h2>
+      <p class="text-muted mb-4">Setup is complete. Here's a summary of your configuration:</p>
+
+      <div class="row g-3 text-start mb-4">
+        <div class="col-md-4">
+          <div class="card border-0 bg-light h-100">
+            <div class="card-body text-center">
+              <i class="bi bi-microsoft fs-3 {{ 'text-success' if graph_active else 'text-secondary' }}"></i>
+              <div class="fw-semibold mt-1">Graph API</div>
+              <span class="badge {{ 'bg-success' if graph_active else 'bg-secondary' }}">
+                {{ 'Active' if graph_active else 'Not configured' }}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card border-0 bg-light h-100">
+            <div class="card-body text-center">
+              <i class="bi bi-envelope-at fs-3 {{ 'text-success' if imap_active else 'text-secondary' }}"></i>
+              <div class="fw-semibold mt-1">IMAP</div>
+              <span class="badge {{ 'bg-success' if imap_active else 'bg-secondary' }}">
+                {{ 'Active' if imap_active else 'Not configured' }}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card border-0 bg-light h-100">
+            <div class="card-body text-center">
+              <i class="bi bi-folder-check fs-3 text-success"></i>
+              <div class="fw-semibold mt-1">Folder Watch</div>
+              <span class="badge bg-success">Always Active</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {% if tier_order %}
+      <div class="alert alert-light border mb-4 text-start">
+        <strong>Access priority:</strong>
+        {% for t in tier_order %}
+          <span class="badge bg-primary me-1">{{ loop.index }}. {{ t|title }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="alert alert-info text-start d-flex gap-2">
+        <i class="bi bi-lightbulb-fill flex-shrink-0 mt-1"></i>
+        <div>You can re-run this wizard at any time from <strong>Settings → Re-run Setup Wizard</strong> to update credentials or add new email tiers.</div>
+      </div>
+
+      <form method="POST" action="{{ url_for('wizard.step_post', n=7) }}">
+        <button type="submit" name="action" value="next" class="btn btn-success btn-lg px-5">
+          <i class="bi bi-speedometer2 me-2"></i>Go to Dashboard
+        </button>
+      </form>
+
+    </div>
+  </div>
+
+</div>
+</div>
+{% endblock %}

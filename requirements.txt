@@ -1,0 +1,15 @@
+flask>=3.0
+msal>=1.26
+cryptography>=42.0
+watchdog>=4.0
+PyMuPDF>=1.24
+pdfplumber>=0.11
+pytesseract>=0.3.10
+Pillow>=10.0
+extract-msg>=0.48
+WeasyPrint>=62.0
+python-docx>=1.1
+rapidfuzz>=3.9
+python-dateutil>=2.9
+html2text>=2024.2
+requests>=2.31

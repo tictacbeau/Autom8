@@ -1,0 +1,125 @@
+/* Remittance Reconciliation Tool — Custom Styles */
+
+body {
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main.container {
+  flex: 1;
+}
+
+/* Navbar */
+.navbar-brand {
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+}
+
+/* Progress bar */
+.progress {
+  border-radius: 4px;
+}
+
+/* Cards */
+.card {
+  border-radius: 0.75rem;
+}
+
+/* Status badges with color coding */
+.badge-tier-1 { background-color: #198754; }
+.badge-tier-2 { background-color: #0d6efd; }
+.badge-tier-3 { background-color: #fd7e14; }
+.badge-tier-4 { background-color: #dc3545; }
+.badge-tier-5 { background-color: #6f42c1; }
+
+/* Aging badges */
+.age-green  { background-color: #198754; color: #fff; }
+.age-yellow { background-color: #ffc107; color: #000; }
+.age-red    { background-color: #dc3545; color: #fff; }
+
+/* Monospace inputs */
+.font-monospace {
+  font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.9rem;
+}
+
+/* Queue table */
+.table-queue th {
+  white-space: nowrap;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6c757d;
+}
+
+/* Match confidence indicator */
+.confidence-bar {
+  height: 6px;
+  border-radius: 3px;
+}
+
+/* Dashboard stat cards */
+.stat-card {
+  text-align: center;
+  padding: 1.5rem;
+}
+
+.stat-card .stat-number {
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.stat-card .stat-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6c757d;
+  margin-top: 0.25rem;
+}
+
+/* Tier badge in navbar */
+.tier-badge {
+  font-size: 0.7rem;
+  padding: 0.15em 0.5em;
+  border-radius: 0.3rem;
+}
+
+/* File drop zone */
+.drop-zone {
+  border: 2px dashed #0d6efd;
+  border-radius: 0.75rem;
+  padding: 3rem;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.drop-zone:hover,
+.drop-zone.dragover {
+  background-color: #e8f0fe;
+}
+
+/* Accordion buttons */
+.accordion-button:not(.collapsed) {
+  background-color: #e8f0fe;
+  color: #0d47a1;
+}
+
+/* Spinner overlay */
+.spinner-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255,255,255,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+/* Responsive table */
+@media (max-width: 768px) {
+  .table-responsive { overflow-x: auto; }
+}

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Setup Wizard — Email Access Priority{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+<div class="col-lg-8">
+
+  <div class="mb-4">
+    <div class="d-flex justify-content-between small text-muted mb-1">
+      <span>Step 5 of {{ total }}</span><span>Email Access Priority</span>
+    </div>
+    <div class="progress" style="height:8px">
+      <div class="progress-bar" style="width:{{ (step/total*100)|round }}%"></div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm" x-data="priorityWizard({{ tier_order | tojson }})">
+    <div class="card-body p-4 p-lg-5">
+
+      <div class="d-flex align-items-center gap-3 mb-3">
+        <i class="bi bi-list-ol text-primary" style="font-size:2.5rem"></i>
+        <div>
+          <h3 class="mb-0 fw-bold">Email Access Priority</h3>
+          <p class="text-muted mb-0">Set which method to try first. The tool falls back automatically on failure.</p>
+        </div>
+      </div>
+
+      <p>Drag to reorder. Disable any tier you don't want to use. The tool will try each enabled tier in order and stop at the first that succeeds.</p>
+
+      <div class="mb-4">
+        <template x-for="(tier, i) in tiers" :key="tier.id">
+          <div class="card mb-2 border" :class="tier.enabled ? 'border-primary' : 'border-secondary opacity-50'">
+            <div class="card-body py-2 d-flex align-items-center gap-3">
+              <span class="text-muted fw-bold" x-text="i+1 + '.'"></span>
+              <i :class="tier.icon + ' fs-5 text-primary'"></i>
+              <div class="flex-grow-1">
+                <div class="fw-semibold" x-text="tier.label"></div>
+                <div class="small text-muted" x-text="tier.desc"></div>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary" @click="moveUp(i)" :disabled="i===0">
+                  <i class="bi bi-arrow-up"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" @click="moveDown(i)" :disabled="i===tiers.length-1">
+                  <i class="bi bi-arrow-down"></i>
+                </button>
+                <div class="form-check form-switch ms-2 mb-0">
+                  <input class="form-check-input" type="checkbox" :id="'en-'+tier.id"
+                         x-model="tier.enabled">
+                  <label class="form-check-label small" :for="'en-'+tier.id" x-text="tier.enabled ? 'Active' : 'Disabled'"></label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <div class="alert alert-info small">
+        <i class="bi bi-info-circle me-1"></i>
+        The <strong>Folder Watch</strong> tier requires no credentials and is always available as a last resort, even when disabled from automatic scanning.
+      </div>
+
+      <form method="POST" action="{{ url_for('wizard.step_post', n=5) }}">
+        <input type="hidden" name="tier_order" :value="JSON.stringify(getOrder())">
+        <div class="d-flex justify-content-between align-items-center mt-4">
+          <a href="{{ url_for('wizard.step', n=4) }}" class="btn btn-link text-muted">
+            <i class="bi bi-arrow-left me-1"></i>Back
+          </a>
+          <div class="d-flex gap-2">
+            <button type="submit" name="action" value="skip" class="btn btn-outline-secondary">Skip</button>
+            <button type="submit" name="action" value="next" class="btn btn-primary">
+              Save &amp; Continue <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+          </div>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+</div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function priorityWizard(savedOrder) {
+  const meta = {
+    graph:  {label: 'Microsoft Graph API', icon: 'bi bi-microsoft', desc: 'OAuth2 — authenticates once, refreshes automatically'},
+    imap:   {label: 'IMAP',                icon: 'bi bi-envelope-at', desc: 'Email protocol — requires email/password or app password'},
+    folder: {label: 'Folder Watch',         icon: 'bi bi-folder-check', desc: 'Drop files into the watch folder manually'},
+  };
+  const allIds = ['graph', 'imap', 'folder'];
+  const ordered = savedOrder && savedOrder.length ? savedOrder : allIds;
+  return {
+    tiers: ordered.map(id => ({id, ...meta[id], enabled: true})),
+    moveUp(i)   { if (i > 0) { [this.tiers[i-1], this.tiers[i]] = [this.tiers[i], this.tiers[i-1]]; this.tiers = [...this.tiers]; } },
+    moveDown(i) { if (i < this.tiers.length-1) { [this.tiers[i], this.tiers[i+1]] = [this.tiers[i+1], this.tiers[i]]; this.tiers = [...this.tiers]; } },
+    getOrder()  { return this.tiers.filter(t => t.enabled).map(t => t.id); }
+  }
+}
+</script>
+{% endblock %}
