@@ -21,3 +21,15 @@ echo Press Ctrl+C to stop.
 echo.
 
 python app\main.py
+if %errorlevel% neq 0 (
+    echo.
+    echo -------------------------------------------------------
+    echo  ERROR: The application crashed. See the message above.
+    echo  Common causes:
+    echo    - A required package failed to install (re-run setup.bat)
+    echo    - Port 5000 is already in use
+    echo    - A dependency is missing (check requirements.txt)
+    echo -------------------------------------------------------
+    pause
+    exit /b 1
+)
